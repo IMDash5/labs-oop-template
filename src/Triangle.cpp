@@ -1,71 +1,73 @@
 #include <iostream>
 #include <cmath>
+#include <memory>
 
 #include "../include/Triangle.h"
 
-Triangle::Triangle() : a(Point()), b(Point()), c(Point()) {}
-Triangle::Triangle(Point& p1, Point& p2, Point& p3) : a(p1), b(p2), c(p3) {}
+template <isScalar T>
+Triangle<T>::Triangle() : points(std::make_unique<Point<T>[]>(3)) {}
 
-Triangle& Triangle::operator=(const Triangle &other) {
+template <isScalar T>
+Triangle<T>::Triangle(const Point<T>& p1, const Point<T>& p2, const Point<T>& p3) : points(std::make_unique<Point<T>[]>(3)) {
+    points[0] = p1; 
+    points[1] = p2; 
+    points[2] = p3; 
+}
+
+template <isScalar T>
+Triangle<T>::Triangle(const Triangle<T> &other) : points(std::make_unique<Point<T>[]>(3)) {
+    for (int i = 0; i < 3; ++i) {
+        points[i] = other.points[i];
+    }
+}
+
+template <isScalar T>
+Triangle<T>& Triangle<T>::operator=(const Triangle<T> &other) {
     if (this != &other) {
-        a = other.a;
-        b = other.b;
-        c = other.c;
+        points = std::make_unique<Point<T>[]>(3);
+        for (int i = 0; i < 3; ++i) {
+            points[i] = other.points[i];
+        }
     }
     return *this;
 }
 
-Triangle& Triangle::operator=(Triangle &&other) noexcept {
+template <isScalar T>
+Triangle<T>& Triangle<T>::operator=(Triangle<T> &&other) noexcept {
     if (this != &other) {
-        a = std::move(other.a);
-        b = std::move(other.b);
-        c = std::move(other.c);
+        points = std::move(other.points);
     }
     return *this;
 }
 
-
-bool Triangle::operator==(const Triangle &other) {
-    return (a == other.a) && (b == other.b) && (c == other.c);
+template <isScalar T>
+bool Triangle<T>::operator==(const Triangle<T> &other) {
+    for (int i = 0; i < 3; ++i) {
+        if (points[i] != other.points[i]) {
+            return false;
+        }
+    }
+    return true;
 }
 
-double Triangle::area() const {
-    double ab = sqrt(pow(b.x - a.x, 2) + pow(b.y - a.y, 2));
-    double ac = sqrt(pow(c.x - a.x, 2) + pow(c.y - a.y, 2));
-    double bc = sqrt(pow(c.x - b.x, 2) + pow(c.y - b.y, 2));
+template <isScalar T>
+double Triangle<T>::area() const {
+    double ab = std::sqrt(std::pow(points[1].x - points[0].x, 2) + std::pow(points[1].y - points[0].y, 2));
+    double ac = std::sqrt(std::pow(points[2].x - points[0].x, 2) + std::pow(points[2].y - points[0].y, 2));
+    double bc = std::sqrt(std::pow(points[2].x - points[1].x, 2) + std::pow(points[2].y - points[1].y, 2));
     
     double s = (ab + ac + bc) / 2;
-    return sqrt(s * (s - ab) * (s - ac) * (s - bc));
+    return std::sqrt(s * (s - ab) * (s - ac) * (s - bc));
 }
 
-Triangle::operator double() const {
+template <isScalar T>
+Triangle<T>::operator double() const {
     return area(); 
 }
-Point Triangle::center() const {
-    double centerX = (a.x + b.x + c.x) / 3;
-    double centerY = (a.y + b.y + c.y) / 3;
-    return Point(centerX, centerY);
-}
 
-std::ostream& Triangle::print(std::ostream& os)const {
-    os << "Вершины треугольника: " << a << ", " << b << ", " << c;
-    return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const Triangle& triangle) {
-    return triangle.print(os);
-}
-
-std::istream& Triangle::input(std::istream& is) {
-    return is >> *this; 
-}
-
-std::istream& operator>>(std::istream& is, Triangle& triangle) {
-    std::cout << "Введите координаты для вершины А (x, y): ";
-    is >> triangle.a;
-    std::cout << "Введите координаты для вершины B (x, y): ";
-    is >> triangle.b;
-    std::cout << "Введите координаты для вершины C (x, y): ";
-    is >> triangle.c;
-    return is;
+template <isScalar T>
+Point<T> Triangle<T>::center() const {
+    T centerX = (points[0].x + points[1].x + points[2].x) / 3;
+    T centerY = (points[0].y + points[1].y + points[2].y) / 3;
+    return Point<T>(centerX, centerY);
 }

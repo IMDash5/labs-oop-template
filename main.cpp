@@ -1,13 +1,20 @@
 #include <iostream>
-#include "Point.h"
-#include "Figure.h" 
-#include "Triangle.h"
-#include "Square.h"
-#include "Octagon.h" 
-#include "figureArray.h"
+#include "src/Point.cpp"
+#include "src/Triangle.cpp"
+#include "src/Square.cpp"
+#include "src/Octagon.cpp"
+#include "src/figureArray.cpp"
+#include "include/Octagon.h"
+#include "include/Point.h"
+#include "include/Figure.h"
+#include "include/Square.h"
+
+
+
+
 
 int main() {
-    Array figureArray;
+    Array<Figure<double>> figureArray;
 
     int choice;
     while (true) {
@@ -16,22 +23,22 @@ int main() {
         if (choice == 0) break;
 
         if (choice == 1) {
-            Triangle* triangle = new Triangle();
-            std::cin >> *triangle;
-            figureArray.addFigure(triangle);
-        } else if (choice == 2) {
-            Octagon* octagon = new Octagon();
-            std::cin >> *octagon;
-            figureArray.addFigure(octagon);}
+            Triangle<double> triangle;
+            std::cin >> triangle;
+            figureArray.addFigure(std::make_shared<Triangle<double>>(triangle));}
+        else if (choice == 2) {
+            Octagon<double> octagon;
+            std::cin >> octagon;
+            figureArray.addFigure(std::make_shared<Octagon<double>>(octagon));}
         else if (choice == 3) {
-            Square* square = new Square();
-            std::cin >> *square;
-            figureArray.addFigure(square);
-        } else {
+            Square<double> square;
+            std::cin >> square;
+            figureArray.addFigure(std::make_shared<Square<double>>(square));
+        } 
+        else {
             std::cout << "Неверный выбор." << std::endl;
         }
     }
-
     figureArray.printFigures();
     
     std::cout << "Общая площадь фигур: " << figureArray.totalArea() << std::endl;

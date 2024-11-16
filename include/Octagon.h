@@ -3,15 +3,31 @@
 #include "Figure.h"
 
 #include <iostream>
+#include <memory>
 
-class Octagon : public Figure
+template <isScalar T>
+class Octagon : public Figure<T>
 {
-    friend std::ostream& operator << (std::ostream& os, const Octagon& octagon);
-    friend std::istream& operator >> (std::istream& is, Octagon& octagon);
+    friend std::ostream& operator<<(std::ostream& os, const Octagon<T>& octagon) {
+        os << "Вершины восьмиугольника: ";
+        for (int i = 0; i < 8; ++i) {
+            os << octagon.points[i] << " ";
+        }
+        return os;
+    }
+
+    friend std::istream& operator>>(std::istream& is, Octagon<T>& octagon) {
+        std::cout << "Введите координаты для вершин (x, y):\n";
+        for (int i = 0; i < 8; ++i) {
+            std::cout << "Вершина " << i + 1 << ": ";
+            is >> octagon.points[i];
+        }
+        return is;
+    }
 
     public:
         Octagon();
-        Octagon(Point& p1, Point& p2, Point& p3, Point& p4, Point& p5, Point& p6, Point& p7, Point& p8);
+        Octagon(const Point<T>& p1, const Point<T>& p2, const Point<T>& p3, const Point<T>& p4, const Point<T>& p5, const Point<T>& p6, const Point<T>& p7, const Point<T>& p8);
         Octagon(const Octagon &other);
 
         Octagon& operator = (const Octagon &other);
@@ -20,18 +36,8 @@ class Octagon : public Figure
 
         operator double() const;
         double area() const override;
-        Point center() const;
-
-        std::ostream& print(std::ostream& os)const override;
-        std::istream& input(std::istream& is)override;
+        Point<T> center() const;
 
     private:
-        Point a;
-        Point b;
-        Point c;
-        Point d;
-        Point e;
-        Point f;
-        Point g;
-        Point h;
+        std::unique_ptr<Point<T>[]> points;
 };

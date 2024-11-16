@@ -3,30 +3,40 @@
 #include "Figure.h"
 
 #include <iostream>
+#include <memory>
 
-class Triangle : public Figure
+template <isScalar T>
+class Triangle : public Figure<T>
 {
-    friend std::ostream& operator << (std::ostream& os, const Triangle& triangle);
-    friend std::istream& operator >> (std::istream& is, Triangle& triangle);
+    friend std::ostream& operator<<(std::ostream& os, const Triangle& triangle) {
+        os << "Вершины треугольника: ";
+        for (int i = 0; i < 3; ++i) {
+            os << triangle.points[i] << " ";
+        }
+        return os;
+    }
+
+    friend std::istream& operator>>(std::istream& is, Triangle& triangle) {
+        for (int i = 0; i < 3; ++i) {
+            std::cout << "Введите координаты для вершины " << char('A' + i) << " (x, y): ";
+            is >> triangle.points[i];
+        }
+        return is;
+    }
 
     public:
         Triangle();
-        Triangle(Point& p1, Point& p2, Point& p3);
+        Triangle(const Point<T>& p1, const Point<T>& p2, const Point<T>& p3);
         Triangle(const Triangle &other);
 
         Triangle& operator = (const Triangle &other);
-        Triangle& operator = (Triangle &&other)noexcept;
+        Triangle& operator = (Triangle &&other) noexcept;
         bool operator == (const Triangle &other);
 
         operator double() const;
         double area() const;
-        Point center() const;
-
-        std::ostream& print(std::ostream& os)const override;
-        std::istream& input(std::istream& is)override;
+        Point<T> center() const;
 
     private:
-        Point a;
-        Point b;
-        Point c;
+        std::unique_ptr<Point<T>[]> points;
 };

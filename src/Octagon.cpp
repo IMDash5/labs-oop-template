@@ -3,45 +3,62 @@
 
 #include "../include/Octagon.h"
 
-Octagon::Octagon() : a(Point()), b(Point()), c(Point()), d(Point()), e(Point()), f(Point()), g(Point()), h(Point()) {}
-Octagon::Octagon(Point& p1, Point& p2, Point& p3, Point& p4, Point& p5, Point& p6, Point& p7, Point& p8) : a(p1), b(p2), c(p3), d(p4), e(p5), f(p6), g(p7), h(p8){}
+template <isScalar T>
+Octagon<T>::Octagon() : points(std::make_unique<Point<T>[]>(8)) {}
 
-Octagon& Octagon::operator=(const Octagon &other) {
+template <isScalar T>
+Octagon<T>::Octagon(const Point<T>& p1, const Point<T>& p2, const Point<T>& p3, const Point<T>& p4, const Point<T>& p5, const Point<T>& p6, const Point<T>& p7, const Point<T>& p8)
+    : points(std::make_unique<Point<T>[]>(8)) {
+    points[0] = p1; 
+    points[1] = p2; 
+    points[2] = p3; 
+    points[3] = p4;
+    points[4] = p5; 
+    points[5] = p6; 
+    points[6] = p7; 
+    points[7] = p8;
+}
+
+
+template <isScalar T>
+Octagon<T>::Octagon(const Octagon& other) : points(std::make_unique<Point<T>[]>(8)) {
+    for (int i = 0; i < 8; ++i) {
+        points[i] = other.points[i];
+    }
+}
+
+template <isScalar T>
+Octagon<T>& Octagon<T>::operator=(const Octagon<T>& other) {
     if (this != &other) {
-        a = other.a;
-        b = other.b;
-        c = other.c;
-        d = other.d;
-        e = other.e;
-        f = other.f;
-        g = other.g;
-        h = other.h;
+        for (int i = 0; i < 8; ++i) {
+            points[i] = other.points[i];
+        }
     }
     return *this;
 }
 
-Octagon& Octagon::operator=(Octagon &&other) {
-    a = other.a;
-    b = other.b;
-    c = other.c;
-    d = other.d;
-    e = other.e;
-    f = other.f;
-    g = other.g;
-    h = other.h;
-
+template <isScalar T>
+Octagon<T>& Octagon<T>::operator=(Octagon<T>&& other) {
+    if (this != &other) {
+        points = std::move(other.points);
+    }
     return *this;
 }
 
-bool Octagon::operator==(const Octagon &other) {
-    return (a == other.a) && (b == other.b) && (c == other.c) && (d == other.d) && (e == other.e) && (f == other.f) && (g == other.g) && (h == other.h);
+template <isScalar T>
+bool Octagon<T>::operator==(const Octagon<T>& other) {
+    for (int i = 0; i < 8; ++i) {
+        if (points[i] != other.points[i]) {
+            return false;
+        }
+    }
+    return true;
 }
 
-double Octagon::area() const {
+template <isScalar T>
+double Octagon<T>::area() const {
     double area = 0.0;
-    Point points[8] = { a, b, c, d, e, f, g, h };
-
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 8; ++i) {
         int j = (i + 1) % 8;
         area += points[i].x * points[j].y;
         area -= points[i].y * points[j].x;
@@ -49,45 +66,20 @@ double Octagon::area() const {
     return std::fabs(area) / 2.0;
 }
 
-Octagon::operator double() const {
-    return area(); 
+template <isScalar T>
+Octagon<T>::operator double() const {
+    return area();
 }
 
-Point Octagon::center() const {
-    double centerX = (a.x + b.x + c.x + d.x + e.x + f.x + g.x + h.x) / 8.0;
-    double centerY = (a.y + b.y + c.y + d.y + e.y + f.y + g.y + h.y) / 8.0;
-    return Point(centerX, centerY);
-}
-
-std::ostream& Octagon::print(std::ostream& os) const {
-    os << "Вершины восьмиугольника: " << a << ", " << b << ", " << c << ", " << d << ", " << e << ", " << f << ", " << g << ", " << h;
-    return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const Octagon& octagon) {
-    return octagon.print(os);
-}
-
-std::istream& Octagon::input(std::istream& is) {
-    return is >> *this; 
-}
-
-std::istream& operator>>(std::istream& is, Octagon& octagon) {
-    std::cout << "Введите координаты для вершины А (x, y): ";
-    is >> octagon.a;
-    std::cout << "Введите координаты для вершины B (x, y): ";
-    is >> octagon.b;
-    std::cout << "Введите координаты для вершины C (x, y): ";
-    is >> octagon.c;
-    std::cout << "Введите координаты для вершины D (x, y): ";
-    is >> octagon.d;
-    std::cout << "Введите координаты для вершины E (x, y): ";
-    is >> octagon.e;
-    std::cout << "Введите координаты для вершины F (x, y): ";
-    is >> octagon.f;
-    std::cout << "Введите координаты для вершины G (x, y): ";
-    is >> octagon.g;
-    std::cout << "Введите координаты для вершины H (x, y): ";
-    is >> octagon.h;
-    return is;
+template <isScalar T>
+Point<T> Octagon<T>::center() const {
+    double centerX = 0.0;
+    double centerY = 0.0;
+    for (int i = 0; i < 8; ++i) {
+        centerX += points[i].x;
+        centerY += points[i].y;
+    }
+    centerX /= 8.0;
+    centerY /= 8.0;
+    return Point<T>(centerX, centerY);
 }

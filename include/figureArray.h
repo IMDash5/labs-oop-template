@@ -1,10 +1,12 @@
 #include "Figure.h"
 
 #include <iostream>
+#include <memory>
 
+template <typename T>
 class Array {
     private:
-        Figure** figures;
+        std::unique_ptr<std::shared_ptr<T>[]>figures;
         int size;
         int capacity;
 
@@ -13,7 +15,7 @@ class Array {
     public:
         Array(int initialCapacity = 3); 
 
-        void addFigure(Figure* figure); 
+        void addFigure(std::shared_ptr<T> figure); 
         void printFigures() const;
         double totalArea() const;
         void removeFigure(int index);

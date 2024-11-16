@@ -3,69 +3,66 @@
 
 #include "../include/Square.h"
 
-Square::Square() : a(Point()), b(Point()), c(Point()), d(Point()) {}    
-Square::Square(Point& p1, Point& p2, Point& p3, Point& p4) : a(p1), b(p2), c(p3), d(p4) {}
+template <isScalar T>
+Square<T>::Square() : points(std::make_unique<Point<T>[]>(4)) {}
 
-Square& Square::operator=(const Square &other) {
+template <isScalar T>
+Square<T>::Square(const Point<T>& p1, const Point<T>& p2, const Point<T>& p3, const Point<T>& p4) : points(std::make_unique<Point<T>[]>(4)) {
+    points[0] = p1; 
+    points[1] = p2; 
+    points[2] = p3; 
+    points[3] = p4;
+}
+
+template <isScalar T>
+Square<T>::Square(const Square<T> &other) : points(std::make_unique<Point<T>[]>(4)) {
+    for (int i = 0; i < 4; ++i) {
+        points[i] = other.points[i];
+    }
+}
+
+template <isScalar T>
+Square<T>& Square<T>::operator=(const Square<T> &other) {
     if (this != &other) {
-        a = other.a;
-        b = other.b;
-        c = other.c;
-        d = other.d;
+        for (int i = 0; i < 4; ++i) {
+            points[i] = other.points[i];
+        }
     }
     return *this;
 }
 
-Square& Square::operator=(Square &&other) {
-    a = other.a;
-    b = other.b;
-    c = other.c;
-    d = other.d;
-
+template <isScalar T>
+Square<T>& Square<T>::operator=(Square<T> &&other) {
+    if (this != &other) {
+        points = std::move(other.points);
+    }
     return *this;
 }
 
-bool Square::operator==(const Square &other) {
-    return (a == other.a) && (b == other.b) && (c == other.c) && (d == other.d);
+template <isScalar T>
+bool Square<T>::operator==(const Square<T> &other) {
+    for (int i = 0; i < 4; ++i) {
+        if (points[i] != other.points[i]) {
+            return false;
+        }
+    }
+    return true;
 }
 
-double Square::area() const {
-    double side = sqrt(pow(b.x - a.x, 2) + pow(b.y - a.y, 2));
+template <isScalar T>
+double Square<T>::area() const {
+    double side = std::sqrt(std::pow(points[1].x - points[0].x, 2) + std::pow(points[1].y - points[0].y, 2));
     return side * side;
 }
 
-Square::operator double() const {
+template <isScalar T>
+Square<T>::operator double() const {
     return area(); 
 }
 
-
-Point Square::center() const {
-    double centerX = (a.x + b.x + c.x + d.x) / 4;
-    double centerY = (a.y + b.y + c.y + d.y) / 4;
-    return Point(centerX, centerY);
-}
-
-std::ostream& Square::print(std::ostream& os) const {
-    os << "Square vertices: " << a << ", " << b << ", " << c << ", " << d;
-    return os;
-}
-
-std::ostream& operator<<(std::ostream& os, const Square& square) {
-    return square.print(os);
-}
-
-std::istream& Square::input(std::istream& is) {
-    return is >> *this; 
-}
-
-std::istream& operator>>(std::istream& is, Square& square) {
-    std::cout << "Введите координаты для вершины А (x, y): ";
-    is >> square.a;
-    std::cout << "Введите координаты для вершины B (x, y): ";
-    is >> square.b;
-    std::cout << "Введите координаты для вершины C (x, y): ";
-    is >> square.c;
-    std::cout << "Введите координаты для вершины D (x, y): ";
-    is >> square.d;
-    return is;
+template <isScalar T>
+Point<T> Square<T>::center() const {
+    T centerX = (points[0].x + points[1].x + points[2].x + points[3].x) / 4;
+    T centerY = (points[0].y + points[1].y + points[2].y + points[3].y) / 4;
+    return Point<T>(centerX, centerY);
 }

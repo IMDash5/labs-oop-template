@@ -1,36 +1,35 @@
 #include "figureArray.h"
 
 #include <iostream>
+#include <memory>
 
-Array::Array(int initialCapacity) : size(0), capacity(initialCapacity) {
-    figures = new Figure*[capacity];
+template <typename T>
+Array<T>::Array(int initialCapacity) : size(0), capacity(initialCapacity) {
+    figures = std::make_unique<std::shared_ptr<T>[]>(capacity);
 }
+template <typename T>
+Array<T>::~Array() = default;
 
-Array::~Array() {
-    for (int i = 0; i < size; i++) {
-        delete figures[i]; 
+template <typename T>
+void Array<T>::resize(int newCapacity) {
+    auto newFigures = std::make_unique<std::shared_ptr<T>[]>(newCapacity);
+    for (int i = 0; i < size; ++i) {
+        newFigures[i] = std::move(figures[i]);
     }
-    delete[] figures;
-}
-
-void Array::resize(int newCapacity) {
-    Figure** newFigures = new Figure*[newCapacity];
-    for (int i = 0; i < size; i++) {
-        newFigures[i] = figures[i];
-    }
-    delete[] figures;
-    figures = newFigures;
     capacity = newCapacity;
+    figures = std::move(newFigures);
 }
 
-void Array::addFigure(Figure* figure) {
+template <typename T>
+void Array<T>::addFigure(std::shared_ptr<T> figure) {
     if (size >= capacity) {
         resize(capacity * 2);
     }
-    figures[size++] = figure;
+    figures[size++] = std::move(figure);
 }
 
-void Array::printFigures() const {
+template <typename T>
+void Array<T>::printFigures() const {
     for (int i = 0; i < size; i++) {
         std::cout << "Фигура " << (i + 1) << ": Центр = (" 
                   << figures[i]->center().x << ", " 
@@ -39,22 +38,23 @@ void Array::printFigures() const {
     }
 }
 
-double Array::totalArea() const {
+template <typename T>
+double Array<T>::totalArea() const {
     double total = 0.0;
     for (int i = 0; i < size; i++) {
         total += figures[i]->area();
     }
     return total;
 }
-
-void Array::removeFigure(int index) {
+template <typename T>
+void Array<T>::removeFigure(int index) {
     if (index < 0 || index >= size) {
         std::cerr << "Ошибка: индекс вне диапазона." << std::endl;
         return;
     }
-    delete figures[index];
-    for (int i = index; i < size - 1; i++) {
-        figures[i] = figures[i + 1];
+    figures[index].reset();
+    for (int i = index; i < size - 1; ++i) {
+        figures[i] = std::move(figures[i + 1]);
     }
-    size--;
+    --size;
 }
