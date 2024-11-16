@@ -9,10 +9,6 @@
 #include "include/Figure.h"
 #include "include/Square.h"
 
-
-
-
-
 int main() {
     Array<Figure<double>> figureArray;
 
