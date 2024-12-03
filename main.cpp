@@ -7,8 +7,7 @@ struct ComplexType {
     int id;
     std::string name;
 
-    ComplexType(int id, const std::string& name)
-        : id(id), name(name) {}
+    ComplexType(int id, const std::string& name) : id(id), name(name) {}
 };
 
 int main() {
