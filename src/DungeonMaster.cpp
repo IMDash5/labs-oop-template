@@ -1,80 +1,132 @@
 #include "DungeonMaster.hpp"
+#include "NPC/Orc.hpp"
+#include "NPC/Druid.hpp"
+#include "NPC/SlaveTrader.hpp"
 #include <fstream>
-#include <sstream>
 #include <iostream>
+#include <set>
 
-DungeonEditor::DungeonEditor() {
-    observers.push_back(std::make_shared<ConsoleObserver>());
-    observers.push_back(std::make_shared<FileObserver>());
-}
+// Конструктор
+DungeonMaster::DungeonMaster() {}
 
-void DungeonEditor::addNPC(const std::string& type, const std::string& name, int x, int y) {
-    if (x >= 0 && x <= 500 && y >= 0 && y <= 500) {
-        npcs.push_back(NPCFactory::createNPC(type, name, x, y));
+// Метод для добавления NPC
+void DungeonMaster::addNPC(const std::string& type, const std::string& name, int x, int y) {
+    if (type == "Orc") {
+        npcs.push_back(std::make_unique<Orc>(name, type, x, y));
+    } else if (type == "Druid") {
+        npcs.push_back(std::make_unique<Druid>(name, type, x, y));
+    } else if (type == "SlaveTrader") {
+        npcs.push_back(std::make_unique<SlaveTrader>(name, type, x, y));
     } else {
-        std::cout << "Координаты " << x << ", " << y << " вне допустимого диапазона!" << std::endl;
+        std::cerr << "Unknown NPC type: " << type << std::endl;
     }
 }
 
-void DungeonEditor::saveToFile(const std::string& filename) {
+// Метод для удаления NPC
+void DungeonMaster::removeNPC(const std::shared_ptr<NPC>& npc, std::vector<std::shared_ptr<NPC>>& npcs) {
+    npcs.erase(std::remove_if(npcs.begin(), npcs.end(), [&npc](const std::shared_ptr<NPC>& ptr) {
+        return ptr.get() == npc.get();
+    }), npcs.end());
+}
+// Метод для сохранения NPC в файл
+void DungeonMaster::saveToFile(const std::string& filename) {
     std::ofstream file(filename);
-    if (!file) {
-        std::cerr << "Не удалось открыть файл для записи: " << filename << std::endl;
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filename << std::endl;
         return;
     }
 
     for (const auto& npc : npcs) {
-        file << npc->getType() << "," << npc->name << "," << npc->x << "," << npc->y << "\n";
+        std::pair<int, int> pos = npc->getPosition();
+        file << npc->getType() << " " << npc->getName() << " " << pos.first << " " << pos.second << std::endl;
     }
+
+    file.close();
 }
 
-void DungeonEditor::loadFromFile(const std::string& filename) {
+// Метод для загрузки NPC из файла
+void DungeonMaster::loadFromFile(const std::string& filename) {
     std::ifstream file(filename);
-    if (!file) {
-        std::cerr << "Не удалось открыть файл для чтения: " << filename << std::endl;
-        return;
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file: " + filename);
     }
 
-    npcs.clear();
-    std::string line;
-    while (std::getline(file, line)) {
-        std::istringstream stream(line);
-        std::string type, name;
-        int x, y;
-
-        if (std::getline(stream, type, ',') &&
-            std::getline(stream, name, ',') &&
-            (stream >> x) && stream.ignore(1, ',') &&
-            (stream >> y)) {
-            addNPC(type, name, x, y);
-        }
+    std::string type, name;
+    int x, y;
+    while (file >> type >> name >> x >> y) {
+        addNPC(type, name, x, y);
     }
+
+    file.close();
 }
-
-void DungeonEditor::printNPCs() const {
+// Метод для вывода списка NPC
+void DungeonMaster::printNPCs() const {
     for (const auto& npc : npcs) {
-        std::cout << npc->name << " (" << npc->getType() << ") - координаты: (" << npc->x << ", " << npc->y << ")\n";
+        std::pair<int, int> pos = npc->getPosition();
+        std::cout << "Type: " << npc->getType() << ", Name: " << npc->getName()
+                  << ", Position: (" << pos.first << ", " << pos.second << ")" << std::endl;
     }
 }
 
-void DungeonEditor::startCombat(int combatDistance) {
-    CombatVisitor combatVisitor(combatDistance, observers);
-    std::vector<std::unique_ptr<NPC>> survivors;
+// Метод для получения списка NPC
+void DungeonMaster::getNPCs(std::vector<std::shared_ptr<NPC>>& npcs) const {
+    for (const auto& npc : this->npcs) {
+        npcs.push_back(std::shared_ptr<NPC>(npc.get(), [](NPC*) {}));
+    }
+}
 
-    while (!npcs.empty()) {
-        auto npc1 = std::move(npcs.back());
-        npcs.pop_back();
+// Метод для очистки списка NPC
+void DungeonMaster::clearNPCs() {
+    npcs.clear();
+}
 
-        if (npcs.empty()) {
-            survivors.push_back(std::move(npc1));
-            break;
+// Метод для начала боя
+void DungeonMaster::startCombat(int attackRange) {
+    std::cout << "Starting combat with attack range: " << attackRange << std::endl;
+    std::vector<std::shared_ptr<NPC>> sharedNPCs;
+    getNPCs(sharedNPCs); // Получаем NPC в виде shared_ptr
+
+    // Удаляем дубликаты из списка NPC
+    std::set<std::shared_ptr<NPC>> uniqueNPCs(sharedNPCs.begin(), sharedNPCs.end());
+    sharedNPCs.assign(uniqueNPCs.begin(), uniqueNPCs.end());
+
+    std::cout << "NPCs before combat: " << sharedNPCs.size() << std::endl;
+
+    std::vector<std::shared_ptr<NPC>> toRemove;
+    CombatVisitor visitor(observers, sharedNPCs, toRemove, nullptr, attackRange);
+
+    // Перебираем все пары NPC
+    for (size_t i = 0; i < sharedNPCs.size(); ++i) {
+        for (size_t j = i + 1; j < sharedNPCs.size(); ++j) {
+            if (sharedNPCs[i] == sharedNPCs[j]) {
+                continue; // Пропускаем сравнение с самим собой
+            }
+
+            std::cout << "Fighting between " << sharedNPCs[i]->getName() << " and " << sharedNPCs[j]->getName() << std::endl;
+            std::vector<std::shared_ptr<NPC>> survivors;
+            visitor.fight(sharedNPCs[i], sharedNPCs[j], survivors);
+
+            // Обрабатываем выживших
+            for (auto& survivor : survivors) {
+                sharedNPCs.push_back(survivor);
+            }
+
+            // Выводим список NPC после каждого боя
+            std::cout << "NPCs after fighting between " << sharedNPCs[i]->getName() << " and " << sharedNPCs[j]->getName() << ":" << std::endl;
+            printNPCs();
         }
-
-        auto npc2 = std::move(npcs.back());
-        npcs.pop_back();
-
-        combatVisitor.fight(npc1, npc2, survivors);
     }
 
-    npcs = std::move(survivors);
+    std::cout << "NPCs after combat: " << sharedNPCs.size() << std::endl;
+
+    // Удаляем NPC, которые были помечены для удаления
+    for (const auto& npc : toRemove) {
+        removeNPC(npc, sharedNPCs);
+    }
+
+    // Обновляем основной список npcs
+    npcs.clear();
+    for (const auto& npc : sharedNPCs) {
+        npcs.push_back(std::unique_ptr<NPC>(npc.get())); // Исправлено
+    }
 }
