@@ -2,7 +2,25 @@
 #include <random>
 #include <ctime>
 
-void DungeonMaster::addNPC(const std::shared_ptr<NPC> &npc){npcs.push_back(npc);}
+DungeonMaster::DungeonMaster() : gameRunning(true)
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dist(0, 99);
+
+    for (int i = 0; i < 50; ++i)
+    {
+        int x = dist(gen);
+        int y = dist(gen);
+        std::string name = "NPC" + std::to_string(i);
+        std::string type = (i % 3 == 0) ? "Orc" : (i % 3 == 1) ? "Druid" : "SlaveTrader";
+        addNPC(NPCFactory::createNPC(x, y, name, type));
+    }
+}
+
+void DungeonMaster::addNPC(const std::shared_ptr<NPC> &npc){
+    std::lock_guard<std::mutex> lock(npcsMutex);
+    npcs.push_back(npc);}
 
 void DungeonMaster::addObserver(const std::shared_ptr<Observer> &observer){observers.push_back(observer);}
 
@@ -24,14 +42,22 @@ void DungeonMaster::removeNPC(const std::shared_ptr<NPC> &npc, std::vector<std::
     }
 }
 
-void DungeonMaster::getNPCs(std::vector<std::shared_ptr<NPC>> &npcs) const{npcs = this->npcs;}
-
-void DungeonMaster::clearNPCs(){npcs.clear();}
-
-void DungeonMaster::printNPCList() const
+void DungeonMaster::getNPCs(std::vector<std::shared_ptr<NPC>> &npcs)
 {
+    std::lock_guard<std::mutex> lock(npcsMutex);
+    npcs = this->npcs;
+}
+
+void DungeonMaster::clearNPCs(){
+    std::lock_guard<std::mutex> lock(npcsMutex);
+    npcs.clear();}
+
+void DungeonMaster::printNPCList()
+{
+    std::lock_guard<std::mutex> lock(npcsMutex);
     if (npcs.empty())
     {
+        
         std::cout << "NPC List is empty" << std::endl;
     }
     else
@@ -44,11 +70,12 @@ void DungeonMaster::printNPCList() const
     }
 }
 
-void DungeonMaster::saveNPCsToFile(const std::string &filename) const
+void DungeonMaster::saveNPCsToFile(const std::string &filename)
 {
     std::ofstream outputFile(filename);
     if (!outputFile){throw OpeningFileException();}
 
+    std::lock_guard<std::mutex> lock(npcsMutex);
     for (const auto &npc : npcs){
         outputFile << npc->getPosition().first << " "
                    << npc->getPosition().second << " "
@@ -68,6 +95,8 @@ void DungeonMaster::loadNPCsFromFile(const std::string &filename)
     int x, y;
     std::string name, type;
 
+    std::lock_guard<std::mutex> lock(npcsMutex);
+
     while (inputFile >> x >> y >> name >> type)
     {
         std::shared_ptr<NPC> npc = NPCFactory::createNPC(x, y, name, type);
@@ -78,59 +107,133 @@ void DungeonMaster::loadNPCsFromFile(const std::string &filename)
     std::cout << "NPCs loaded from file: " << filename << std::endl;
 }
 
-void DungeonMaster::startBattle(double attackRange)
+void DungeonMaster::startGame()
 {
-    int AFKBattleCounter = 0;
-    CombatVisitor::notify("Battle started with attack range: " + std::to_string(attackRange), observers);
-    std::vector<std::shared_ptr<NPC>> toRemove;
-    while (npcs.size() > 1)
+    std::thread moveThread(&DungeonMaster::moveNPCsThread, this);
+    std::thread combatThread(&DungeonMaster::combatThread, this);
+    std::thread printThread(&DungeonMaster::printMapThread, this);
+
+    moveThread.join();
+    combatThread.join();
+    printThread.join();
+}
+
+void DungeonMaster::stopGame()
+{
+    gameRunning = false;
+    cv.notify_all();
+}
+
+void DungeonMaster::moveNPCsThread()
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dist(-10, 10);
+
+    while (gameRunning)
     {
-        bool anyBattleOccurred = false;
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::shuffle(npcs.begin(), npcs.end(), gen);
-        for (size_t i = 0; i < npcs.size(); i += 2)
+        std::lock_guard<std::mutex> lock(npcsMutex);
+        for (auto &npc : npcs)
         {
-            if (i + 1 < npcs.size())
+            int dx = dist(gen);
+            int dy = dist(gen);
+
+            auto [currentX, currentY] = npc->getPosition();
+
+            int newX = std::max(0, std::min(99, currentX + dx));
+            int newY = std::max(0, std::min(99, currentY + dy));
+
+            npc->setPosition(newX, newY);
+
+            for (auto &other : npcs)
             {
-                std::shared_ptr<NPC> npc1 = npcs[i];
-                std::shared_ptr<NPC> npc2 = npcs[i + 1];
-
-                std::shared_ptr<CombatVisitor> visitor = std::make_shared<CombatVisitor>(npc1, attackRange, npcs, observers, toRemove);
-                npc2->accept(visitor);
-
-                if ((std::find(toRemove.begin(), toRemove.end(), npc1) != toRemove.end()) || (std::find(toRemove.begin(), toRemove.end(), npc2) != toRemove.end()))
-                {
-                    anyBattleOccurred = true;
-                }
+                if (npc != other && npc->distanceTo(other) <= 10){checkForCombat(npc, other);}
             }
         }
-
-        for (auto npc : toRemove){removeNPC(npc, npcs);}
-
-        if (!anyBattleOccurred)
-        {
-            AFKBattleCounter++;
-            if (AFKBattleCounter > 50){break;}
-        }
-        else{AFKBattleCounter = 0;}
-
-        toRemove.clear();
-    }
-
-    if (npcs.size() == 1){
-        CombatVisitor::notify("Battle is over. The winner is: " + npcs[0]->getName() + " (" + npcs[0]->getType() + ")", observers);
-    }
-    else if (npcs.size() > 1){
-        CombatVisitor::notify("Battle is over. Friendship wins! No winner could be determined. Remaining NPCs:", observers);
-        for (const auto &npc : npcs){
-            CombatVisitor::notify(npc->getName() + " (" + npc->getType() + ")", observers);
-        }
-    }
-    else{
-        CombatVisitor::notify("Battle is over. No winner could be determined. All NPCs are dead", observers);
     }
 }
 
-DungeonMaster::~DungeonMaster(){npcs.clear();}
+void DungeonMaster::combatThread()
+{
+    while (gameRunning)
+    {
+        std::unique_lock<std::mutex> lock(npcsMutex);
+        cv.wait(lock);
+
+        for (auto it = npcs.begin(); it != npcs.end();)
+        {
+            auto npc = *it;
+            for (auto otherIt = it + 1; otherIt != npcs.end();)
+            {
+                auto other = *otherIt;
+                if (npc->distanceTo(other) <= 10)
+                {
+                    performCombat(npc, other);
+                    if (npc->isDead())
+                    {
+                        it = npcs.erase(it);
+                        break;
+                    }
+                    if (other->isDead())
+                    {
+                        otherIt = npcs.erase(otherIt);
+                        continue;
+                    }
+                }
+                ++otherIt;
+            }
+            ++it;
+        }
+    }
+}
+
+void DungeonMaster::printMapThread()
+{
+    while (gameRunning)
+    {
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+
+        std::lock_guard<std::mutex> lock(npcsMutex);
+        std::cout << "Map:" << std::endl;
+        for (const auto &npc : npcs)
+        {
+            if (!npc->isDead())
+            {
+                auto [x, y] = npc->getPosition();
+                std::cout << "Type: " << npc->getType() << ", Name: " << npc->getName() << ", Position: (" << x << ", " << y << ")" << std::endl;
+            }
+        }
+    }
+}
+
+void DungeonMaster::checkForCombat(std::shared_ptr<NPC> npc1, std::shared_ptr<NPC> npc2)
+{
+    cv.notify_one();
+}
+
+void DungeonMaster::performCombat(std::shared_ptr<NPC> attacker, std::shared_ptr<NPC> defender)
+{
+    int attackPower = rollDice();
+    int defensePower = rollDice();
+
+    if (attackPower > defensePower)
+    {
+        defender->setDead(true);
+        std::cout << attacker->getName() << " killed " << defender->getName() << std::endl;
+    }
+}
+
+int DungeonMaster::rollDice()
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dist(1, 6);
+    return dist(gen);
+}
+
+DungeonMaster::~DungeonMaster(){
+    gameRunning = false;
+    cv.notify_all();
+    }
