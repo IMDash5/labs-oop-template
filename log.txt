@@ -1,0 +1,24 @@
+Battle started with attack range: 50.000000
+Battle is over. Friendship wins! No winner could be determined. Remaining NPCs:
+SlaveTrader137168 (SlaveTrader)
+Orc194074 (Orc)
+Druid91484 (Druid)
+SlaveTrader37138 (SlaveTrader)
+SlaveTrader3478 (SlaveTrader)
+Druid111161 (Druid)
+Battle started with attack range: 100.000000
+Battle is over. Friendship wins! No winner could be determined. Remaining NPCs:
+SlaveTrader3478 (SlaveTrader)
+Druid91484 (Druid)
+Orc194074 (Orc)
+SlaveTrader37138 (SlaveTrader)
+Druid111161 (Druid)
+SlaveTrader137168 (SlaveTrader)
+Battle started with attack range: 200.000000
+Orc194074 (Orc) killed Druid91484 (Druid)
+Battle is over. Friendship wins! No winner could be determined. Remaining NPCs:
+SlaveTrader37138 (SlaveTrader)
+SlaveTrader3478 (SlaveTrader)
+SlaveTrader137168 (SlaveTrader)
+Druid111161 (Druid)
+Orc194074 (Orc)
