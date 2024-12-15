@@ -1,27 +1,29 @@
 #pragma once
 
-#include <vector>
-#include "NPC/npc.hpp"
+#include "NPC/NPC.hpp"
 #include "NPC/NPCfactory.hpp"
-#include "observers/observer.hpp"
+#include "observers/Observer.hpp"
+#include "CombatVisitor.hpp"
+#include <vector>
+#include <memory>
 #include <iostream>
 #include <fstream>
 #include <algorithm>
 #include <stdexcept>
-class GameManager
+
+class DungeonMaster
 {
 private:
     std::vector<std::shared_ptr<NPC>> npcs;
     std::vector<std::shared_ptr<Observer>> observers;
 
 public:
-    ~GameManager();
+    ~DungeonMaster();
 
     void addNPC(const std::shared_ptr<NPC> &npc);
     void addObserver(const std::shared_ptr<Observer> &observer);
     void removeObserver(const std::shared_ptr<Observer> &observer);
     static void removeNPC(const std::shared_ptr<NPC> &npc, std::vector<std::shared_ptr<NPC>> &npcs);
-    void removeNPCByIndex(size_t index);
     void getNPCs(std::vector<std::shared_ptr<NPC>> &npcs) const;
     void clearNPCs();
     void printNPCList() const;
@@ -30,9 +32,8 @@ public:
     void startBattle(double attackRange);
 };
 
-
 class OpeningFileException : public std::runtime_error
 {
-    public: 
-        OpeningFileException() : std::runtime_error("Error while opening file") {}
+public:
+    OpeningFileException() : std::runtime_error("Error while opening file") {}
 };

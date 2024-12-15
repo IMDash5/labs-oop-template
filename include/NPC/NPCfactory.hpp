@@ -1,8 +1,10 @@
 #pragma once
 
+#include "NPC.hpp"
 #include "Orc.hpp"
 #include "Druid.hpp"
 #include "SlaveTrader.hpp"
+#include <memory>
 
 class NPCFactory
 {

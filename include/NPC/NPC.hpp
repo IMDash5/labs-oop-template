@@ -1,11 +1,11 @@
-
 #pragma once
 
 #include <string>
-#include <iostream>
-#include <cmath>
-#include "../Visitor.hpp"
 #include <memory>
+#include <cmath>
+#include <iostream>
+#include "../../include/Visitor.hpp"
+
 class NPC
 {
 protected:
@@ -15,7 +15,7 @@ protected:
 
 public:
     NPC(int x, int y, const std::string &name, const std::string &type);
-    virtual ~NPC();
+    virtual ~NPC() = default;
 
     std::string getName() const;
     std::string getType() const;

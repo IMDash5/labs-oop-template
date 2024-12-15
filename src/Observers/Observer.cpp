@@ -1,6 +1,5 @@
-#pragma once
 
-#include "Observer.hpp"
+#include "../../include/observers/Observer.hpp"
 #include <iostream>
 
 class ConsoleObserver : public Observer

@@ -1,0 +1,20 @@
+File Log: Battle started with attack range: 2.000000
+File Log: Orc2 (Orc) killed Druid2 (Druid)
+File Log: SlaveTrader1 (SlaveTrader) killed Druid1 (Druid)
+File Log: Orc2 (Orc) killed SlaveTrader1 (SlaveTrader)
+File Log: Battle is over. Friendship wins! No winner could be determined. Remaining NPCs:
+File Log: Orc1 (Orc)
+File Log: Orc2 (Orc)
+File Log: Battle started with attack range: 5.000000
+File Log: Orc2 (Orc) killed Druid2 (Druid)
+File Log: Orc1 (Orc) killed Druid1 (Druid)
+File Log: Orc2 (Orc) killed SlaveTrader1 (SlaveTrader)
+File Log: Orc1 (Orc) killed Orc2 (Orc)
+File Log: Orc2 (Orc) killed Orc1 (Orc)
+File Log: Battle is over. No winner could be determined. All NPCs are dead
+File Log: Battle started with attack range: 5.000000
+File Log: Orc2 (Orc) killed SlaveTrader1 (SlaveTrader)
+File Log: Orc1 (Orc) killed Druid1 (Druid)
+File Log: Orc2 (Orc) killed Orc1 (Orc)
+File Log: Orc1 (Orc) killed Orc2 (Orc)
+File Log: Battle is over. The winner is: Druid2 (Druid)

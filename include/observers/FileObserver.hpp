@@ -1,43 +1,18 @@
 #pragma once
 
-#include "observer.hpp"
-#include <iostream>
+#include "Observer.hpp"
 #include <fstream>
-#include <string>
 #include <vector>
 
-class FileLogger : public Observer
+class FileObserver : public Observer
 {
 private:
     std::ofstream outputFile;
 
 public:
-    explicit FileLogger(const std::string &filename) : outputFile(filename, std::ios::app) {}
+    explicit FileObserver(const std::string &filename);
+    ~FileObserver();
 
-    ~FileLogger()
-    {
-        if (outputFile.is_open())
-        {
-            outputFile.close();
-        }
-    }
-
-    void onEvent(const std::string &event) override
-    {
-        if (outputFile.is_open())
-        {
-            outputFile << event << std::endl;
-        }
-    }
-
-    void getLogs(std::vector<std::string> &lines, std::string &filename)
-    {
-        std::ifstream inputFile(filename);
-        std::string line;
-        while (std::getline(inputFile, line))
-        {
-            lines.push_back(line);
-        }
-        inputFile.close();
-    }
+    void onEvent(const std::string &event) override;
+    void getLogs(std::vector<std::string> &lines, const std::string &filename);
 };
